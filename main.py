@@ -1,71 +1,65 @@
 from fasthtml.common import *
 from claudette import *
 import asyncio
+from monsterui.all import *
 
-# Set up the app, including daisyui and tailwind for the chat component
-tlink = Script(src="https://cdn.tailwindcss.com"),
-dlink = Link(rel="stylesheet", href="https://cdn.jsdelivr.net/npm/daisyui@4.11.1/dist/full.min.css")
-app = FastHTML(hdrs=(tlink, dlink, picolink), exts='ws')
+# Create your app with the theme
+hdrs = Theme.blue.headers()
+app, rt = fast_app(hdrs=hdrs, exts='ws')
+
 
 # Set up a chat model client and list of messages (https://claudette.answer.ai/)
 cli = AsyncClient(models[-1])
 sp = """You are a helpful and concise assistant."""
-messages = []
+messages = [
+    {"role": "assistant", "content": "Hi! How can I help you today? 🚀"},
+    {"role": "user", "content": "Can you help me with MonsterUI?"}
+]
 
-# Chat message component (renders a chat bubble)
-# Now with a unique ID for the content and the message
+def UsrMsg(txt, content_id): 
+    return Div(Div(txt, id=content_id,cls='whitespace-pre-wrap'), cls='max-w-[70%] ml-auto rounded-3xl bg-[#f4f4f4] px-5 py-2.5 rounded-tr-lg')
+
+def AIMsg(txt, content_id): 
+    avatar = Div(UkIcon('bot', height=24, width=24), cls='h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center')
+    return Div(Div(avatar, Div(txt, cls='whitespace-pre-wrap ml-3'), cls='flex items-start'), id=content_id, cls='max-w-[70%] rounded-3xl px-5 py-2.5 rounded-tr-lg')
+
 def ChatMessage(msg_idx, **kwargs):
+    """Unified interface for chat messages"""
     msg = messages[msg_idx]
-    bubble_class = "chat-bubble-primary" if msg['role']=='user' else 'chat-bubble-secondary'
-    chat_class = "chat-end" if msg['role']=='user' else 'chat-start'
-    return Div(Div(msg['role'], cls="chat-header"),
-               Div(msg['content'],
-                   id=f"chat-content-{msg_idx}", # Target if updating the content
-                   cls=f"chat-bubble {bubble_class}"),
-               id=f"chat-message-{msg_idx}", # Target if replacing the whole message
-               cls=f"chat {chat_class}", **kwargs)
+    content_id = f"chat-content-{msg_idx}"
+    return (UsrMsg(msg['content'], content_id) if msg['role'] == 'user' 
+            else AIMsg(msg['content'], content_id))
 
-# The input field for the user message. Also used to clear the
-# input field after sending a message via an OOB swap
-def ChatInput():
-    return Input(type="text", name='msg', id='msg-input',
-                 placeholder="Type a message",
-                 cls="input input-bordered w-full", hx_swap_oob='true')
+Input = Form(
+    Div(
+        TextArea(placeholder='Message assistant', 
+                cls='resize-none border-none outline-none bg-transparent w-full shadow-none ring-0 focus:ring-0 focus:outline-none hover:shadow-none text-lg'),
+        DivFullySpaced(
+            DivHStacked(
+                UkIconLink('paperclip', height=24, width=24, cls='hover:opacity-70'),
+                UkIconLink('mic', height=24, width=24, cls='hover:opacity-70')
+            ),
+            Button(UkIcon('arrow-right', height=24, width=24), 
+                  cls='bg-black text-white rounded-full hover:opacity-70 h-8 w-8 transform -rotate-90'),
+            cls='px-3'
+        )
+    ), cls='p-2 bg-[#f4f4f4] rounded-3xl')
 
+def chat_layout():
+    return Container(
+        Div(
+            *[ChatMessage(msg_idx) for msg_idx, msg in enumerate(messages)],
+            cls='space-y-2'
+        ),
+        Input,
+        cls='space-y-4'
+    )
 # The main screen
 @app.route("/")
 def get():
-    page = Body(H1('Chatbot Demo'),
-                Div(*[ChatMessage(msg_idx) for msg_idx, msg in enumerate(messages)],
-                    id="chatlist", cls="chat-box h-[73vh] overflow-y-auto"),
-                Form(Group(ChatInput(), Button("Send", cls="btn btn-primary")),
-                    ws_send=True, hx_ext="ws", ws_connect="/wscon",
-                    cls="flex space-x-2 mt-2"),
-                cls="p-4 max-w-lg mx-auto")
-    return Title('Chatbot Demo'), page
+    return chat_layout()
 
 
-@app.ws('/wscon')
-async def ws(msg:str, send):
-    messages.append({"role":"user", "content":msg.rstrip()})
-    swap = 'beforeend'
 
-    # Send the user message to the user (updates the UI right away)
-    await send(Div(ChatMessage(len(messages)-1), hx_swap_oob=swap, id="chatlist"))
-
-    # Send the clear input field command to the user
-    await send(ChatInput())
-
-    # Model response (streaming)
-    r = await cli(messages, sp=sp, stream=True)
-
-    # Send an empty message with the assistant response
-    messages.append({"role":"assistant", "content":""})
-    await send(Div(ChatMessage(len(messages)-1), hx_swap_oob=swap, id="chatlist"))
-
-    # Fill in the message content
-    async for chunk in r:
-        messages[-1]["content"] += chunk
-        await send(Span(chunk, id=f"chat-content-{len(messages)-1}", hx_swap_oob=swap))
 
 serve()
