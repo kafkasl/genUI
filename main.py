@@ -12,8 +12,9 @@ app, rt = fast_app(hdrs=hdrs, exts='ws')
 cli = AsyncClient(models[-1])
 sp = """You are a helpful and concise assistant."""
 messages = [
-    {"role": "user", "content": "Can you help me with MonsterUI?"},
     {"role": "assistant", "content": "Hi! How can I help you today? 🚀"},
+    {"role": "user", "content": "Can you help me with MonsterUI?"},
+    {"role": "assistant", "content": "Of course! MonsterUI is a library of components that make it easy to build complex, data-driven web applications. It's built on top of Flask and uses Tailwind CSS for styling."},
 ]
 
 def UsrMsg(txt, content_id):
@@ -66,14 +67,20 @@ MultimodalInput = Form(
     ws_connect="/wscon")
 
 def chat_layout():
-    return Container(
-        Div(
-            *[ChatMessage(msg_idx) for msg_idx, msg in enumerate(messages)],
-            id="chatlist",
-            cls='space-y-2'
+    return Div(
+        Titled("Chat UI",
+            Div(
+                *[ChatMessage(msg_idx) for msg_idx, msg in enumerate(messages)],
+                id="chatlist",
+                cls='space-y-6 overflow-y-auto py-12'
+            ),
+            Footer(
+                MultimodalInput,
+                cls='fixed bottom-0 p-4 bg-white border-t w-full max-w-3xl'  # Match parent container width
+            ),
+            cls='h-screen flex flex-col max-w-3xl mx-auto w-full'  # Container with max width and center alignment
         ),
-        MultimodalInput,
-        cls='space-y-4'
+        cls='container mx-auto px-4'  # Outer container for consistent padding
     )
 
 @app.route("/")
