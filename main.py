@@ -2,20 +2,26 @@ from fasthtml.common import *
 from claudette import *
 import asyncio
 from monsterui.all import *
+from typing import List
 
 # Create your app with the theme
 hdrs = Theme.blue.headers()
-app, rt = fast_app(hdrs=hdrs, exts='ws')
+app, rt = fast_app(hdrs=hdrs, exts='ws', static_path='public')
+
+upload_dir = Path("public")
+upload_dir.mkdir(exist_ok=True)
 
 
 # Set up a chat model client and list of messages (https://claudette.answer.ai/)
-cli = AsyncClient(models[-1])
-sp = """You are a helpful and concise assistant."""
+cli = AsyncClient(models[1])
+sp = """You are a helpful assistant."""
 messages = [
-    {"role": "assistant", "content": "Hi! How can I help you today? 🚀"},
-    {"role": "user", "content": "Can you help me with MonsterUI?"},
-    {"role": "assistant", "content": "Of course! MonsterUI is a library of components that make it easy to build complex, data-driven web applications. It's built on top of Flask and uses Tailwind CSS for styling."},
+    # {"role": "assistant", "content": "Hi! How can I help you today? 🚀"},
+    # {"role": "user", "content": "Can you help me with MonsterUI?"},
+    # {"role": "assistant", "content": "Of course! MonsterUI is a library of components that make it easy to build complex, data-driven web applications. It's built on top of Flask and uses Tailwind CSS for styling."},
 ]
+
+# Chat components
 
 def UsrMsg(txt, content_id):
     txt_div = Div(txt, id=content_id, cls='whitespace-pre-wrap break-words')
@@ -47,24 +53,61 @@ def ChatInput():
             name='msg',
             hx_swap_oob='true')
 
+def ImageUploadButton():
+    return Label(
+        Input(type="file", 
+              name="file", 
+              accept="image/*", 
+              id="file-input",
+              cls="hidden"),  # This hides the input
+        UkIcon('paperclip', height=24, width=24, cls='hover:opacity-70 cursor-pointer'),
+        hx_post="/upload", 
+        hx_encoding="multipart/form-data",
+        hx_trigger="change from:#file-input", 
+        hx_swap="beforeend",
+        hx_target="#image-previews"
+    )
+    # return Form(
+    #         Input(type="file", 
+    #             name="file",
+    #             accept="image/*",
+    #             multiple=True,
+    #             cls="hidden",
+    #             id="file-input",
+    #             hx_post="/upload",
+    #             hx_trigger="change",
+    #             hx_target="#image-previews",
+    #             hx_swap="beforeend"),
+    #         UkIcon('paperclip', height=24, width=24, cls='hover:opacity-70 cursor-pointer'),
+    #         hx_post="/upload", hx_encoding="multipart/form-data",
+    #         hx_trigger="change from:#file-input", hx_swap="beforeend",
+    #         hx_target="#result-one"
+        # )
+
+
 # QUESTION: how to do send automatically the form on enter? maybe the button?
-MultimodalInput = Form(
-    Div(
-        ChatInput(),
-        DivFullySpaced(
-            DivHStacked(
-                UkIconLink('paperclip', height=24, width=24, cls='hover:opacity-70'),
-                UkIconLink('mic', height=24, width=24, cls='hover:opacity-70')
-            ),
-            Button(UkIcon('arrow-right', height=24, width=24), 
-                  cls='bg-black text-white rounded-full hover:opacity-70 h-8 w-8 transform -rotate-90'),
-            cls='px-3'
-        )
-    ), 
-    cls='p-2 bg-[#f4f4f4] rounded-3xl',
-    ws_send=True, 
-    hx_ext="ws", 
-    ws_connect="/wscon")
+def MultimodalInput():
+    return Form(
+        Div(
+            Div(id="image-previews", cls="flex flex-wrap gap-1 mb-2"),  # Container for thumbnails
+            Div(
+                ChatInput(),
+                DivFullySpaced(
+                    DivHStacked(
+                        ImageUploadButton(),
+                        UkIconLink('mic', height=24, width=24, cls='hover:opacity-70')
+                    ),
+                    Button(UkIcon('arrow-right', height=24, width=24), 
+                          cls='bg-black text-white rounded-full hover:opacity-70 h-8 w-8 transform -rotate-90'),
+                    cls='px-3'
+                )
+            ), 
+            cls='p-2 bg-[#f4f4f4] rounded-3xl'
+        ),
+        ws_send=True, 
+        hx_ext="ws", 
+        ws_connect="/wscon",
+    )
 
 def chat_layout():
     return Div(
@@ -75,7 +118,7 @@ def chat_layout():
                 cls='space-y-6 overflow-y-auto py-12'
             ),
             Footer(
-                MultimodalInput,
+                MultimodalInput(),
                 cls='fixed bottom-0 p-4 bg-white border-t w-full max-w-3xl'  # Match parent container width
             ),
             cls='h-screen flex flex-col max-w-3xl mx-auto w-full'  # Container with max width and center alignment
@@ -83,14 +126,35 @@ def chat_layout():
         cls='container mx-auto px-4'  # Outer container for consistent padding
     )
 
+# Images 
+def Thumbnail(f):
+    return Figure(
+        Img(src=f'/{f.filename}', 
+            style="width:48px;height:48px;object-fit:cover;border-radius:4px;"),
+        Input(type="hidden", name="images", value=f.filename),
+
+        cls="inline-flex items-center p-1 m-1 bg-base-200 rounded-lg"
+    )
+
+@rt
+async def upload(request):
+    form = await request.form()
+    f = form['file']
+    (upload_dir / f.filename).write_bytes(await f.read())
+    return Thumbnail(f)
+
+
 @app.route("/")
 def get():
     return chat_layout()
 
 @app.ws('/wscon')
-async def ws(msg:str, send):
+async def submit(msg: str, images: List[str], send):
+    print(f"Received message: {msg}")
+    print(f"Images: {images}")
+    print(f"Messages: {messages}")
     # Add user message to conversation history
-    messages.append({"role":"user", "content":msg.rstrip()})
+    messages.append({"role":"user", "content": msg.rstrip()})
     swap = 'beforeend'  # Tell htmx to append new content at end of target element
 
     # Immediately show user message in chat
@@ -107,8 +171,10 @@ async def ws(msg:str, send):
     # Show empty bubble immediately - creates structure for streaming updates
     await send(Div(ChatMessage(len(messages)-1), hx_swap_oob=swap, id="chatlist"))
 
+
     # Stream the response chunks
     async for chunk in r:
+        print(f"Chunk: {chunk}")
         # Update server-side message content
         messages[-1]["content"] += chunk
         # Send chunk to browser - will be inserted into div with matching content_id
@@ -122,7 +188,7 @@ async def ws(msg:str, send):
 # 4. This maintains consistent HTML structure during streaming
 # 5. The outer bubble structure is created once, then filled gradually with chunks
 
-serve()
+serve(port=5039)
 
 # QUESTIONS:
 # 1. How to do send automatically the form on enter? maybe the button?
