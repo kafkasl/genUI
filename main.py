@@ -120,21 +120,22 @@ def MultimodalInput():
     )
 
 def chat_layout():
-    messages = []
     return Div(
-        Titled("Chat UI",
+        DivVStacked(
+            H1("Chat UI"),
             Div(
                 *[ChatMessage(msg_idx) for msg_idx, msg in enumerate(messages)],
                 id="chatlist",
-                cls='space-y-6 overflow-y-auto py-12'
+                cls='space-y-6 overflow-y-auto flex-1 w-full'  # flex-1 allows this div to grow/shrink
             ),
             Footer(
                 MultimodalInput(),
-                cls='fixed bottom-0 p-4 bg-white border-t w-full max-w-3xl'  # Match parent container width
+                cls='p-4 bg-white border-t w-full'
+                # fixed bottom-0 p-4 bg-white border-t w-full max-w-3xl'
             ),
-            cls='h-screen flex flex-col max-w-3xl mx-auto w-full'  # Container with max width and center alignment
+            cls='h-screen flex flex-col max-w-3xl mx-auto w-full'
         ),
-        cls='container mx-auto px-4'  # Outer container for consistent padding
+        cls='container w-full px-4'
     )
 
 # Images 
@@ -165,6 +166,7 @@ async def upload(request):
 
 @app.route("/")
 def get():
+    messages = [] # clear session
     return chat_layout()
 
 @app.ws('/wscon')
