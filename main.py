@@ -13,7 +13,7 @@ upload_dir.mkdir(exist_ok=True)
 
 
 # Set up a chat model client and list of messages (https://claudette.answer.ai/)
-cli = AsyncClient(models[1])
+chat = AsyncClient(models[1])
 sp = """You are a helpful assistant."""
 messages = [
     # {"role": "assistant", "content": "Hi! How can I help you today? 🚀"},
@@ -23,10 +23,13 @@ messages = [
 
 # Chat components
 
-def UsrMsg(txt, content_id):
-    txt_div = Div(txt, id=content_id, cls='whitespace-pre-wrap break-words')
+def UsrMsg(content, content_id):
+    if isinstance(content, list):
+        content = [x['text'] for x in content if x['type'] == 'text'][0]
+
+    txt_div = Div(content, id=content_id, cls='whitespace-pre-wrap break-words')
     return Div(txt_div,
-              cls='max-w-[70%] ml-auto rounded-3xl bg-[#f4f4f4] px-5 py-2.5 rounded-tr-lg')
+            cls='max-w-[70%] ml-auto rounded-3xl bg-[#f4f4f4] px-5 py-2.5 rounded-tr-lg')
 
 def AIMsg(txt, content_id):
     avatar = Div(UkIcon('bot', height=24, width=24),
@@ -47,11 +50,19 @@ def ChatMessage(msg_idx):
 
 def ChatInput():
     # return Input(placeholder='Message assistant', 
-    return TextArea(placeholder='Message assistant', 
+    
+    return (Div(id="image-previews", cls="flex flex-wrap gap-1 mb-2"),  # Container for thumbnails
+            Input(placeholder='Message assistant', 
             cls='resize-none border-none outline-none bg-transparent w-full shadow-none ring-0 focus:ring-0 focus:outline-none hover:shadow-none text-lg',
             id='msg-input',
             name='msg',
             hx_swap_oob='true')
+    )
+    # return TextArea(placeholder='Message assistant', 
+    #         cls='resize-none border-none outline-none bg-transparent w-full shadow-none ring-0 focus:ring-0 focus:outline-none hover:shadow-none text-lg',
+    #         id='msg-input',
+    #         name='msg',
+    #         hx_swap_oob='true')
 
 def ImageUploadButton():
     return Label(
@@ -89,7 +100,6 @@ def ImageUploadButton():
 def MultimodalInput():
     return Form(
         Div(
-            Div(id="image-previews", cls="flex flex-wrap gap-1 mb-2"),  # Container for thumbnails
             Div(
                 ChatInput(),
                 DivFullySpaced(
@@ -110,6 +120,7 @@ def MultimodalInput():
     )
 
 def chat_layout():
+    messages = []
     return Div(
         Titled("Chat UI",
             Div(
@@ -127,21 +138,29 @@ def chat_layout():
     )
 
 # Images 
-def Thumbnail(f):
+def Thumbnail(fname):
     return Figure(
-        Img(src=f'/{f.filename}', 
+        Img(src=f'/{fname}', 
             style="width:48px;height:48px;object-fit:cover;border-radius:4px;"),
-        Input(type="hidden", name="images", value=f.filename),
+        Input(type="hidden", name="images", value=fname),
 
         cls="inline-flex items-center p-1 m-1 bg-base-200 rounded-lg"
     )
 
+async def save_file(file_obj):
+    dest = upload_dir / file_obj.filename
+    dest.write_bytes(await file_obj.read())
+    return dest
+
+def load_img_bytes(fname: str):
+    return (upload_dir / fname).read_bytes()
+
 @rt
 async def upload(request):
     form = await request.form()
-    f = form['file']
-    (upload_dir / f.filename).write_bytes(await f.read())
-    return Thumbnail(f)
+    file_obj = form['file']
+    await save_file(file_obj)
+    return Thumbnail(file_obj.filename)
 
 
 @app.route("/")
@@ -149,22 +168,30 @@ def get():
     return chat_layout()
 
 @app.ws('/wscon')
-async def submit(msg: str, images: List[str], send):
+async def submit(msg: str, images: List[str] = [], send = None):
+    # if multiple images, they are returned like [['image1.jpg'], ['image2.jpg']] so we flatten them
+    images = L([img for sub in images for img in sub]) if len(images) > 1 else L(images)
+
+    thumbs = images.map(Thumbnail)
     print(f"Received message: {msg}")
     print(f"Images: {images}")
-    print(f"Messages: {messages}")
     # Add user message to conversation history
-    messages.append({"role":"user", "content": msg.rstrip()})
+    imgs = L(images).map(load_img_bytes)
+    msg = mk_msg([*imgs, msg])
+    messages.append(msg)
+    # messages.append({"role":"user", "content": msg.rstrip()})
     swap = 'beforeend'  # Tell htmx to append new content at end of target element
 
+    # print(f"Messages: {messages}")
     # Immediately show user message in chat
-    await send(Div(ChatMessage(len(messages)-1), hx_swap_oob=swap, id="chatlist"))
+    await send(Div((ChatMessage(len(messages)-1), *thumbs), hx_swap_oob=swap, id="chatlist"))
+    # await send(Div(ChatMessage(len(messages)-1), hx_swap_oob=swap, id="chatlist"))
 
     # Clear input field via OOB swap
     await send(ChatInput())
 
     # Get streaming response from AI
-    r = await cli(messages, sp=sp, stream=True)
+    r = await chat(messages, sp=sp, stream=True)
 
     # Create empty AI message bubble
     messages.append({"role":"assistant", "content":""})
