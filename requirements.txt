@@ -1,3 +1,5 @@
 claudette
 python-fasthtml
 monsterui
+openai-whisper
+python-dotenv

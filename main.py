@@ -1,19 +1,38 @@
 from fasthtml.common import *
 from claudette import *
-import asyncio
 from monsterui.all import *
 from typing import List
+from dotenv import load_dotenv
+import whisper
+import uuid
+from pathlib import Path
 
-# Create your app with the theme
-hdrs = Theme.blue.headers()
+load_dotenv()
+
+# Style to add blinking to an icon
+blink = Style("""
+    @keyframes blink {
+        0% { opacity: 1; }
+        50% { opacity: 0 !important; }
+        100% { opacity: 1; }
+    }
+    .blink {
+        animation: blink 1.5s infinite;
+    }
+""")
+
+hdrs = Theme.blue.headers(), Script(src="/js/record.js"), blink
 app, rt = fast_app(hdrs=hdrs, exts='ws', static_path='public')
 
 upload_dir = Path("public")
 upload_dir.mkdir(exist_ok=True)
 
+model = whisper.load_model("tiny.en")
+
 
 # Set up a chat model client and list of messages (https://claudette.answer.ai/)
 chat = AsyncClient(models[1])
+
 sp = """You are a helpful assistant."""
 messages = [
     # {"role": "assistant", "content": "Hi! How can I help you today? 🚀"},
@@ -22,7 +41,6 @@ messages = [
 ]
 
 # Chat components
-
 def UsrMsg(content, content_id):
     if isinstance(content, list):
         content = [x['text'] for x in content if x['type'] == 'text'][0]
@@ -48,21 +66,15 @@ def ChatMessage(msg_idx):
     else:
         return AIMsg(msg['content'], content_id)
 
-def ChatInput():
-    # return Input(placeholder='Message assistant', 
-    
+def ChatInput(text=""):
     return (Div(id="image-previews", cls="flex flex-wrap gap-1 mb-2"),  # Container for thumbnails
             Input(placeholder='Message assistant', 
+            value=text,
             cls='resize-none border-none outline-none bg-transparent w-full shadow-none ring-0 focus:ring-0 focus:outline-none hover:shadow-none text-lg',
             id='msg-input',
             name='msg',
             hx_swap_oob='true')
     )
-    # return TextArea(placeholder='Message assistant', 
-    #         cls='resize-none border-none outline-none bg-transparent w-full shadow-none ring-0 focus:ring-0 focus:outline-none hover:shadow-none text-lg',
-    #         id='msg-input',
-    #         name='msg',
-    #         hx_swap_oob='true')
 
 def ImageUploadButton():
     return Label(
@@ -70,33 +82,17 @@ def ImageUploadButton():
               name="file", 
               accept="image/*", 
               id="file-input",
-              cls="hidden"),  # This hides the input
-        UkIcon('paperclip', height=24, width=24, cls='hover:opacity-70 cursor-pointer'),
+              cls="hidden"),
+        UkIcon('paperclip', height=24, width=24, cls='hover:opacity-70 cursor-pointer border-none focus:outline-none'),
         hx_post="/upload", 
         hx_encoding="multipart/form-data",
         hx_trigger="change from:#file-input", 
         hx_swap="beforeend",
-        hx_target="#image-previews"
+        hx_target="#image-previews",
+
     )
-    # return Form(
-    #         Input(type="file", 
-    #             name="file",
-    #             accept="image/*",
-    #             multiple=True,
-    #             cls="hidden",
-    #             id="file-input",
-    #             hx_post="/upload",
-    #             hx_trigger="change",
-    #             hx_target="#image-previews",
-    #             hx_swap="beforeend"),
-    #         UkIcon('paperclip', height=24, width=24, cls='hover:opacity-70 cursor-pointer'),
-    #         hx_post="/upload", hx_encoding="multipart/form-data",
-    #         hx_trigger="change from:#file-input", hx_swap="beforeend",
-    #         hx_target="#result-one"
-        # )
 
 
-# QUESTION: how to do send automatically the form on enter? maybe the button?
 def MultimodalInput():
     return Form(
         Div(
@@ -105,7 +101,15 @@ def MultimodalInput():
                 DivFullySpaced(
                     DivHStacked(
                         ImageUploadButton(),
-                        UkIconLink('mic', height=24, width=24, cls='hover:opacity-70')
+                        Label(
+                            UkIconLink('mic', height=24, width=24, 
+                                     cls='hover:opacity-70 transition-opacity duration-200',
+                                     id='mic-icon'),
+                            UkIconLink('circle-stop', height=24, width=24,
+                                     cls='hidden hover:opacity-70 transition-opacity duration-200 blink',
+                                     id='stop-icon'),
+                            id="mic-btn"
+                        )
                     ),
                     Button(UkIcon('arrow-right', height=24, width=24), 
                           cls='bg-black text-white rounded-full hover:opacity-70 h-8 w-8 transform -rotate-90'),
@@ -116,22 +120,21 @@ def MultimodalInput():
         ),
         ws_send=True, 
         hx_ext="ws", 
-        ws_connect="/wscon",
+        ws_connect="/wscon"
     )
 
 def chat_layout():
     return Div(
         DivVStacked(
-            H1("Chat UI"),
+            H1("Chat UI", cls='m-2'),
             Div(
                 *[ChatMessage(msg_idx) for msg_idx, msg in enumerate(messages)],
                 id="chatlist",
-                cls='space-y-6 overflow-y-auto flex-1 w-full'  # flex-1 allows this div to grow/shrink
+                cls='space-y-6 overflow-y-auto flex-1 w-full' 
             ),
             Footer(
                 MultimodalInput(),
                 cls='p-4 bg-white border-t w-full'
-                # fixed bottom-0 p-4 bg-white border-t w-full max-w-3xl'
             ),
             cls='h-screen flex flex-col max-w-3xl mx-auto w-full'
         ),
@@ -163,6 +166,16 @@ async def upload(request):
     await save_file(file_obj)
     return Thumbnail(file_obj.filename)
 
+@rt('/transcribe-voice', methods=['POST'])
+async def transcribe_voice(request):
+    form = await request.form()
+    file_obj = form["audio"]
+    data = await file_obj.read()
+    fname = upload_dir / f"{uuid.uuid4()}.mp3"
+    with open(fname, "wb") as f: f.write(data)
+    result = model.transcribe(str(fname))
+    fname.unlink()
+    return result["text"].strip()
 
 @app.route("/")
 def get():
@@ -175,16 +188,14 @@ async def submit(msg: str, images: List[str] = [], send = None):
     images = L([img for sub in images for img in sub]) if len(images) > 1 else L(images)
 
     thumbs = images.map(Thumbnail)
-    print(f"Received message: {msg}")
-    print(f"Images: {images}")
+    
     # Add user message to conversation history
     imgs = L(images).map(load_img_bytes)
     msg = mk_msg([*imgs, msg])
     messages.append(msg)
-    # messages.append({"role":"user", "content": msg.rstrip()})
+
     swap = 'beforeend'  # Tell htmx to append new content at end of target element
 
-    # print(f"Messages: {messages}")
     # Immediately show user message in chat
     await send(Div((ChatMessage(len(messages)-1), *thumbs), hx_swap_oob=swap, id="chatlist"))
     # await send(Div(ChatMessage(len(messages)-1), hx_swap_oob=swap, id="chatlist"))
@@ -203,7 +214,6 @@ async def submit(msg: str, images: List[str] = [], send = None):
 
     # Stream the response chunks
     async for chunk in r:
-        print(f"Chunk: {chunk}")
         # Update server-side message content
         messages[-1]["content"] += chunk
         # Send chunk to browser - will be inserted into div with matching content_id
@@ -220,7 +230,5 @@ async def submit(msg: str, images: List[str] = [], send = None):
 serve(port=5039)
 
 # QUESTIONS:
-# 1. How to do send automatically the form on enter? maybe the button?
+# 1. How to do send automatically the <Textarea> form on enter? maybe the button? => For now we'll just use an <Input>
 # 2. How to find what is the "most similar" element in monsterUI/franken/tailwind to avoid too many custom classes?
-# 3. How to upload audio for transcription
-# 4. How to upload images
