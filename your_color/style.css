@@ -48,6 +48,7 @@ h1.ukiyo-title {
   margin: 0 auto;
   padding: 0 15px 30px;
   min-height: 100vh;
+  color: #333;
 }
 
 /* Loading indicator pointer events handling */
@@ -74,7 +75,6 @@ h1.ukiyo-title {
   position: relative;
   z-index: 1;
   opacity: 0.85;
-1
 }
 
 /* Painted border for buttons */
@@ -114,25 +114,12 @@ h1.ukiyo-title {
 }
 
 
-/* Color Circle as Moon/Sun in Ukiyo-e style */
-.color-circle-container {
-  min-height: 180px;
-  width: 100%;
-  overflow: visible;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.color-circle-container svg circle {
-  filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.8));
-}
-
 /* Color Card styles */
 #color-display {
   position: sticky;
   top: 0;
   background-color: transparent;
+  color: #333;
   display: flex;
   flex-direction: column;
   padding: 20px;
@@ -156,6 +143,7 @@ h3 {
 }
 
 .color-description {
+  margin-top: 20px;
   text-align: center;
   font-size: 0.95rem;
   background-color: var(--warm-white);
@@ -165,6 +153,7 @@ h3 {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   position: relative;
   border: none;
+  opacity: 0.85;
 }
 
 /* Painted border for color description */
@@ -277,18 +266,17 @@ h3 {
 .content-column {
   flex: 2;
   padding-right: 20px;
+  color: #333;
 }
 
 .sidebar-column {
   flex: 1;
   background-color: transparent;
+  color: #333;
 }
 
 .chat-container {
-  /* border-radius: 6px;
-  background-color: var(--warm-white);
-  box-shadow: 0 1px 5px rgba(0,0,0,0.1); */
-  /* border: 1px solid var(--soft-border); */
+  background-color: transparent;
   border: none;
   box-shadow: none;
   padding: 20px;
@@ -296,6 +284,7 @@ h3 {
   height: 100%;
   overflow-y: auto;
   position: relative;
+  color: #333;
 }
 
 /* Painted border for the main chat container */
@@ -327,4 +316,104 @@ h3 {
     padding-right: 0;
     margin-bottom: 20px;
   }
+}
+
+/* Finish options container */
+#finish-options-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  margin: 20px 0;
+}
+
+/* Finish button styles */
+.finish-option {
+  margin: 0 10px 10px 0;
+  display: flex;
+  white-space: normal;
+  line-height: 1.4;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  z-index: 1;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+.finish-yes {
+  background-color: rgba(117, 179, 240, 0.8);
+  color: white;
+}
+
+.finish-no {
+  background-color: var(--warm-white);
+  color: #333;
+}
+
+/* Finish prompt styling */
+.finish-prompt {
+  font-size: 1.1rem;
+  margin-bottom: 15px;
+  text-align: center;
+  color: #333;
+}
+
+.finish-options-card {
+  background-color: var(--warm-white);
+  padding: 15px;
+  border-radius: 8px;
+  margin: 20px 0;
+  position: relative;
+}
+
+/* Final view styling */
+#final-view {
+  text-align: center;
+  margin-top: 30px;
+}
+
+.final-message {
+  background-color: rgba(251, 248, 240, 0.9);
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  display: inline-block;
+  max-width: 80%;
+}
+
+.new-journey-btn {
+  margin: 0 auto;
+  display: inline-block;
+}
+
+/* Hand-drawn border for moon */
+.hand-drawn-border {
+  position: relative;
+}
+
+.hand-drawn-border::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  right: -1px;
+  bottom: -1px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, 
+    rgba(40, 40, 40, 0.6) 0%, 
+    rgba(40, 40, 40, 0.4) 40%, 
+    rgba(40, 40, 40, 0.5) 60%, 
+    rgba(40, 40, 40, 0.3) 100%);
+  opacity: 1;
+  z-index: -1;
+  transform: scale(1.015);
+  filter: blur(0.6px);
+}
+
+/* Remove the second border */
+.hand-drawn-border::before {
+  display: none;
 } 

@@ -3,7 +3,6 @@ from monsterui.all import *
 from claudette import *
 from fastcore.all import *
 
-import os
 
 # os.environ['ANTHROPIC_LOG'] = 'debug'
 
@@ -31,6 +30,11 @@ THE MOON DESCRIPTION:
 - Use minimal but evocative language, like haiku or the descriptions during a tea ceremony
 - Don't overdo it and keep it grounded on the answers
 
+CONVERSATION FLOW:
+- Initially, use generate_response for each user interaction
+- After the user has made 3 selections, use generate_finish_response instead of generate_response
+- The generate_finish_response function takes the same color and reflection parameters but offers finish options instead of awareness statements
+
 For color meanings try using colors that match Hiroshige's ukiyo-e palette.
 Do not use the same color twice in a row.
 """
@@ -43,7 +47,7 @@ initial_statements = [
     "I believe FastHTML will revolutionize GenUI"
 ]
 
-initial_instructions = "Welcome to a moment of mindful awareness. As you respond to five brief questions, the moon will transform to represent your awareness color, accompanied by a poetic reflection. Without trying to change anything, simply notice what's present in your experience right now, and select the statement that feels most resonant:"
+initial_instructions = "Welcome to a moment of mindful awareness. As you respond to three brief questions, the moon will transform to represent your awareness color, accompanied by a poetic reflection. Without trying to change anything, simply notice what's present in your experience right now, and select the statement that feels most resonant:"
 
 # Define fonts - Change these to modify fonts across the entire application
 primary_font = "Noto+Serif"
@@ -65,14 +69,20 @@ cli = Client(model)
 messages = [sp]
 
 def ColorCircle(color: str):
-    return f"""<svg width="200" height="200" viewBox="0 0 200 200">
-        <circle cx="100" cy="100" r="80" fill="{color}" />
-    </svg>"""
+    """Create a moon circle by overlaying a simple colored semi-transparent circle over a moon image."""
+    return f"""
+    <div class="hand-drawn-border" style="position: relative; width: 200px; height: 200px;">
+        <img src="moon.jpg" alt="Moon" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+        <svg width="200" height="200" viewBox="0 0 200 200" style="position: absolute; top: 0; left: 0;">
+            <circle cx="100" cy="100" r="98" fill="{color}" opacity="0.4"/>
+        </svg>
+    </div>
+    """
 
 def ColorCard(color: str, description: str):
     """Create a card showing the awareness color and description."""
     return Div( 
-            Div(NotStr(ColorCircle(color)), cls="color-circle-container"),
+            NotStr(ColorCircle(color)),
             Div(H3("Your Awareness is...", cls="color-title"), P(description), cls="color-description"),
         id="color-display",
         hx_swap_oob="true"        
@@ -109,16 +119,38 @@ def generate_response(color: str, reflection: str, options: list[str]):
     - Avoid statements that solidify identity ("I am sad" vs "I notice sadness")
     - Include options that invite subtle noticing of different aspects of experience
     - Use language that creates space and non-identification with experiences
-    - Options should be only a list of regular text
+    - Options should be only a list of regular text. Never generate tags or text enclosed in square brackets.
     """
-    print(color, reflection, options)
     color_component = ColorCard(color, reflection)
     new_buttons = generate_buttons(options)
     return reflection, color, color_component, new_buttons
 
+def generate_finish_response(color: str, reflection: str):
+    """Generate finish options instead of awareness statements.
+    Similar to generate_response but offers finishing options.
+    """
+    # Create color card just like in normal response
+    color_component = ColorCard(color, reflection)
+    
+    # Create finish buttons with scroll behavior
+    finish_buttons = Div(
+        Button("Finish and view your awareness portrait", 
+              hx_post="/finish-view", 
+              hx_target="#chatlist",
+              hx_swap="innerHTML scroll:window:top",
+              cls="awareness-option"),
+        Button("Continue reflection", 
+              name="continue_reflection", 
+              hx_post="/send",
+              hx_target="#button-container",
+              cls="awareness-option"),
+        id="button-container"
+    )
+    
+    return reflection, color, color_component, finish_buttons
+
 @app.get
 def index():
-    
     buttons = generate_buttons(initial_statements)
     color_component = ColorCard("#808080", "Take a moment to simply notice what's present in your experience...")
 
@@ -129,10 +161,7 @@ def index():
         
         Div(cls="main-layout")(
             Div(cls="content-column")(
-                Card(id="chatlist", cls="chat-container")(
-                    # Ukiyo-e style title inside the form
-                    
-                    
+                Card(id="chatlist", cls="chat-container", attrs={"hx-swap-oob": "beforeend"})( 
                     Reflection(initial_instructions, title=H1("Mindful Awareness Practice", cls="ukiyo-title")),
                     buttons)
             ),
@@ -149,18 +178,34 @@ async def send(request):
     form_data = await request.form()
     user_choice = first(form_data.keys())
     
-    messages.append(user_choice)
+    messages.append(user_choice)    
 
-    print(messages)
-    r = cli.structured(messages, tools=[generate_response])
+    r = cli.structured(messages, tools=[generate_response, generate_finish_response])
     response_text, color, color_component, new_buttons = r[0]
-    messages.extend([color, response_text])
+    messages.append(response_text)
+    
+    # Create a div for the user response and reflection that will be appended to the chat container
+    chat_content = Div(
+        UserReply(user_choice),
+        Reflection(response_text),
+        new_buttons,
+        id="new-content",
+        attrs={"hx-swap-oob": "beforeend:#chatlist scroll:bottom"}
+    )
     
     return (
-        UserReply(user_choice), # we display previous user choice
-        Reflection(response_text), # we display the reflection
-        Div(new_buttons, id="button-container"), # we replace the buttons with new ones w/ oob
+        chat_content,
         color_component # display the new color & mood using oob replacement
+    )
+
+@app.post("/finish-view")
+async def finish_view():
+    """Return a minimalist view that replaces the chatlist."""
+    return Div(
+        H1("Your Mindful Awareness Portrait", cls="ukiyo-title"),
+        P("The moon reflects your present moment awareness. Take a moment to observe and absorb this reflection."),
+        Button("Start New Journey", hx_get="/", hx_target="body", cls="awareness-option"),
+        id="chatlist"  # Same ID as chat list for replacement
     )
 
 serve(reload=True)
