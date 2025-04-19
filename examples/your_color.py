@@ -1,162 +1,170 @@
 from fasthtml.common import *
 from monsterui.all import *
 from claudette import *
-from datetime import datetime
+from fastcore.all import *
 
 import os
-import re
 
-os.environ['ANTHROPIC_LOG'] = 'debug'
+# os.environ['ANTHROPIC_LOG'] = 'debug'
+
+
+
+# System prompt for mindful awareness guidance
+sp = """You are a mindfulness guide in the style of Jon Kabat-Zinn, helping people develop awareness of their present-moment experience through gentle, non-judgmental attention.
+Each response should include:
+1. A color (in hex format) that represents their current state of awareness
+2. A brief, insightful reflection on their experience - not diagnosing but observing with curiosity
+3. Three new first-person statements for the user to consider, each inviting deeper awareness:
+   - One statement about noticing thoughts (e.g., "I notice thoughts about the future arising in my mind")
+   - One statement about observing emotions with distance (e.g., "I'm aware of a feeling of restlessness without being caught in it")
+   - One statement about sensing the body (e.g., "I feel the weight of my body against the chair")
+
+MINDFULNESS GUIDANCE:
+- Frame statements as opportunities for noticing rather than declarations of truth
+- Use language that creates space between the person and their experience ("I notice..." rather than "I am...")
+- Invite awareness of subtle aspects that might typically go unnoticed
+- Include statements that bring attention to different aspects of experience (breath, sensations, thoughts, emotions)
+- Avoid reinforcing identification with emotions ("I notice anxiety is present" vs "I am anxious")
+- Maintain an attitude of curiosity and non-judgment in your reflections
+
+Color meanings (representing awareness states):
+- Blue (#0000FF): Present, aware, grounded in the now
+- Green (#00FF00): Open, receptive, allowing
+- Yellow (#FFFF00): Clear seeing, illuminating, discerning
+- Purple (#800080): Witnessing, observing without attachment
+- Red (#FF0000): Noticing intensity, energy, activation
+- Orange (#FFA500): Curious attention, engaged awareness
+- Pink (#FFC0CB): Compassionate awareness, gentle attention
+- Brown (#8B4513): Embodied presence, grounded awareness
+- Gray (#808080): Spacious observation, non-reactive
+- Black (#000000): Restful awareness, deep listening
+- Teal (#008080): Balanced attention, equanimous presence
+- Light Blue (#ADD8E6): Soft focus, gentle awareness
+"""
+
+initial_statements = [
+    "I notice my breath is shallow right now",
+    "I'm aware of a feeling of openness in my chest",
+    "I observe my mind jumping from thought to thought",
+    "I feel sensations of heaviness in my body"
+]
 
 hdrs = Theme.blue.headers()
-
-# Create your app with the theme
 app, rt = fast_app(hdrs=hdrs)
 
 model = models[1]
 cli = Client(model)
-sp="""You are a color-reading assistant that asks questions to help the user choose a color.
-The color you choose for the person will represent their personality.
-Make interesting questions to keep the user interested and question what is his nature.
-Use the tool generate_buttons to generate a list of buttons. 
-When the user clicks on a button, the button's value is returned to you as a message.
-"""
+
 messages = [sp]
 
-# Read the HAL9000 SVG file
-# with open('hal-9000.svg', 'r') as file:
-#     HAL_SVG = file.read()
+def ColorCircle(color: str):
+    return f"""<svg width="200" height="200" viewBox="0 0 200 200">
+        <circle cx="100" cy="100" r="80" fill="{color}"/>
+    </svg>"""
 
-def generate_buttons(options: list[str]):
-    """Generate a list of buttons. """
-    return Div(
-        *[Button(option, name=option, hx_target="#chatlist", hx_swap="beforeend",hx_post=send, cls="uk-button uk-button-default uk-margin-small-right") 
-          for option in options],
-        cls="uk-margin-medium-bottom"
+def ColorCard(color: str, description: str):
+    """Create a card showing the awareness color and description."""
+    return Div( 
+        Div(
+            Div(
+                Div(
+                    NotStr(ColorCircle(color)),
+                    cls="uk-flex uk-flex-center uk-flex-middle",
+                    style="min-height: 180px; width: 100%; overflow: visible;"
+                ),
+                H4("Your Awareness Color", cls="uk-text-center uk-margin-small-top"),
+                Div(description, cls="uk-text-center uk-text-small"),
+                cls="uk-card-body"
+            ),
+            id="color-card",
+            cls="uk-card uk-card-default uk-border-rounded uk-box-shadow-small uk-margin-auto"
+        ),
+        id="color-display",
+        cls="uk-position-sticky",
+        style="top: 20px;",
+        hx_swap_oob="true"
     )
 
-# Display user's reply as a button-like element
 def UserReply(msg):
-    # Position reply to the right like in a chat interface
     return Div(
         Div(msg, cls="uk-button uk-button-primary uk-text-left uk-disabled"),
         cls="uk-margin-medium-bottom uk-flex uk-flex-right"
     )
 
-def Hal9000Card(color: str):
-    # Ensure color is lowercase for consistent replacement
-    HAL_SVG = open('hal-9000.svg', 'r').read()
-    hex_color = color.lower()
-    # Make a fresh copy of the SVG to avoid modifying the original
-    modified_svg = HAL_SVG[:]
-    
-    # Replace the exact gradient definitions that create the glowing effect
-    # Key color replacements for the main glow effect
-    key_replacements = [
-        ('stop-color:#ea1117', f'stop-color:{hex_color}'),
-        ('stop-color:#d3070e', f'stop-color:{hex_color}'),
-        ('stop-color:#cd0d14', f'stop-color:{hex_color}'),
-        ('stop-color:#c10914', f'stop-color:{hex_color}'),
-        ('fill:#ea1117', f'fill:{hex_color}'),
-        ('stroke:#ef1d00', f'stroke:{hex_color}')
-    ]
-    
-    for old, new in key_replacements:
-        modified_svg = modified_svg.replace(old, new)
-    
-    # Replace specific gradient definitions
-    color_ids = ['#ea1117', '#d3070e', '#cd0d14', '#c10914', '#ef1d00']
-    for color_id in color_ids:
-        modified_svg = modified_svg.replace(color_id, hex_color)
-    
-    # Replace remaining accent colors
-    accent_colors = ['#f15e4f', '#ec4e3e', '#e66044', '#f74639', '#ef4d2b', '#eb5241', '#f7432e', '#ea3231']
-    for accent in accent_colors:
-        modified_svg = modified_svg.replace(accent, hex_color)
-    
-    # Set the SVG to be fully visible with proper dimensions
-    return modified_svg.replace('width="256" height="256"', 'width="200" height="200" viewBox="0 0 256 256"')
-
-def ColorCard(color: str, description: str):
-    """
-    Create a beautiful HAL 9000 eye card displaying the user's color.
-    
-    Args:
-        color: Hex color value beginning with # (e.g. #ff0000)
-        description: Brief description of the color's meaning
-    """
-   
-    modified_svg = Hal9000Card(color)
-    
-    # Create a card container optimized for the right column layout
-    return color, description, Div(
-        # Card container with shadow and rounded corners
-        Div(
-            # HAL 9000 SVG eye with plenty of space
-            Div(
-                NotStr(modified_svg),
-                cls="uk-flex uk-flex-center uk-flex-middle",
-                style="min-height: 180px; width: 100%; overflow: visible;"
-            ),
-            # Color name with the hex color
-            H4(f"Your color so far.", cls="uk-text-center uk-margin-small-top"),
-            # Message
-            Div(description, cls="uk-text-center uk-text-small", style=f"color: {color}"),
-            cls="uk-card-body"
-        ),
-        id="color-card",
-        cls="uk-card uk-card-default uk-border-rounded uk-box-shadow-small uk-margin-auto"
+def generate_buttons(options: list[str]):
+    return Div(
+        *[Button(option, name=option, hx_target="#button-container", hx_indicator=".htmx-indicator",
+                 hx_swap="outerHTML",
+                 hx_post="/send", cls="uk-button uk-button-default uk-margin-small-right") 
+          for option in options],
+        id="button-container",
+        cls="uk-margin-medium-bottom"
     )
 
-# The main screen
+def Reflection(text: str):
+    return Div(
+        Div(
+            Div("Mindful Reflection", cls="uk-text-bold uk-text-small uk-text-muted uk-margin-small-bottom"),
+            Div(text, cls="uk-text-left"),
+            cls="uk-card uk-card-default uk-card-body uk-padding-small"
+        ),
+        cls="uk-margin-medium-bottom uk-flex uk-flex-left"
+    )
+
+def generate_response(color: str, reflection: str, options: list[str]):
+    """Generate the response components.
+    The color represents the quality of awareness present.
+    The reflection offers a non-judgmental observation of the experience.
+    The options are statements of noticing that invite deeper awareness:
+    
+    IMPORTANT: 
+    - Frame statements as observations using "I notice..." "I observe..." or "I'm aware of..."
+    - Avoid statements that solidify identity ("I am sad" vs "I notice sadness")
+    - Include options that invite subtle noticing of different aspects of experience
+    - Use language that creates space and non-identification with experiences
+    """
+    color_component = ColorCard(color, reflection)
+    new_buttons = generate_buttons(options)
+    return reflection, color_component, new_buttons
+
 @app.get
 def index():
-    options = ["Let's start! I'm ready to discover my color", "Why not?", "I'd rather not but here we are"]
-    buttons = generate_buttons(options)
-    _, _, color_component = ColorCard("blue", "blue")
+    
+    buttons = generate_buttons(initial_statements)
+    color_component = ColorCard("#808080", "Take a moment to simply notice what's present in your experience...")
 
-    # Create a two-column layout with chat on left and color card on right
     page = Div(cls="uk-container")(
+        # Loading indicator at the top level
+        Card("Reflecting...", cls="htmx-indicator uk-position-fixed uk-overlay uk-overlay-default uk-position-center", style="background-color: white; z-index: 9999; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.2);"),
+        
         Div(cls="uk-grid uk-grid-medium uk-margin-top", attrs={"uk-grid": ""})(
-            # Left column: Chat
             Div(cls="uk-width-2-3@m")(
-                Div(id="chatlist", cls="chat-box h-[70vh] overflow-y-auto px-4 py-4 uk-card uk-card-default uk-card-body uk-border-rounded")(buttons)
+                Card(id="chatlist", cls="chat-box h-full overflow-y-auto px-4")(
+                    Reflection("Welcome to a moment of mindful awareness. Without trying to change anything, simply notice what's present in your experience right now, and select the statement that feels most resonant:"),
+                    buttons)
             ),
-            # Right column: Color Display (sticky position)
             Div(cls="uk-width-1-3@m")(
-                Div(id="color-display", cls="uk-position-sticky", style="top: 20px;")(
-                    color_component
-                )
+                color_component
             )
         )
     )
-    return Titled('What\'s your color?', page, cls=ContainerT.lg)
+    return Titled('Mindful Awareness Practice', page, cls=ContainerT.lg)
 
-# Handle the form submission
 @app.post
 async def send(request):
     form_data = await request.form()
-    form_dict = dict(form_data)
+    user_choice = first(form_data.keys())
     
-    # Get the selected option (button clicked)
-    user_choice = next(iter(form_dict))
-    
-    # Add the user's choice to messages
     messages.append(user_choice)
+    r = cli.structured(messages, tools=[generate_response])
+    response_text, color_component, new_buttons = r[0]
+    messages.append(response_text)
     
-    # Get Claude's response for color
-    r = cli.structured(messages, tools=[ColorCard])
-    color, msg, color_component = r[0]
-    messages.append(f'Current color & message: {color} {msg}')
-    
-    # Get Claude's response for buttons
-    r = cli.structured(messages, tools=[generate_buttons])
-    
-    # Return the user's reply, buttons from Claude, and out-of-band color update
     return (
-        UserReply(user_choice), 
-        *r[0],
-        Div(id="color-display", hx_swap_oob="true")(color_component)
+        UserReply(user_choice), # we display previous user choice
+        Reflection(response_text), # we display the reflection
+        Div(new_buttons, id="button-container"), # we replace the buttons with new ones w/ oob
+        color_component # display the new color & mood using oob replacement
     )
 
-serve()
+serve(reload=True)
