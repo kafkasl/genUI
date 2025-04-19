@@ -1,0 +1,330 @@
+/* Mindfulness application styles */
+
+/* Font variables - change these in a single place */
+:root {
+  --font-primary: "Noto Serif", serif;
+  --font-japanese: "Noto Serif JP", serif;
+  --font-weight-normal: 400;
+  --font-weight-bold: 700;
+  --warm-white: rgba(251, 248, 240, 0.9);
+  --soft-border: rgba(159, 137, 105, 0.4);
+}
+
+/* Background inspired by Hiroshige */
+body {
+  background-image: url('hiroshige.webp');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  height: auto;
+  color: #333;
+  font-family: var(--font-primary);
+}
+
+html {
+  height: 100%;
+  
+}
+
+/* Ukiyo-e style title */
+h1.ukiyo-title {
+  font-family: "Ma Shan Zheng", cursive;
+  font-weight: normal;
+  font-size: 2.5rem;
+  letter-spacing: 0.07em;
+  text-align: left;
+  margin-bottom: 15px;
+  line-height: 2;
+}
+
+
+/* Semi-transparent overlay for content */
+.app-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 15px 30px;
+  min-height: 100vh;
+}
+
+/* Loading indicator pointer events handling */
+.htmx-indicator {
+  pointer-events: none;
+}
+
+.pointer-events-auto {
+  pointer-events: auto !important;
+}
+
+/* Button styles */
+.awareness-option {
+  margin: 0 10px 10px 0;
+  display: flex;
+  white-space: normal;
+  line-height: 1.4;
+  background-color: var(--warm-white);
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  z-index: 1;
+  opacity: 0.85;
+1
+}
+
+/* Painted border for buttons */
+.awareness-option::before {
+  content: '';
+  position: absolute;
+  top: -1.5px;
+  left: -1.5px;
+  right: -1.5px;
+  bottom: -1.5px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 0 0 1px #627785;
+  opacity: 0.85;
+  z-index: -1;
+  filter: blur(0.7px);
+  pointer-events: none;
+}
+
+.awareness-option:hover {
+  background-color: rgba(117, 179, 240, 0.8);
+  color: white;
+}
+
+.awareness-option:hover::before {
+  border-color: #93C0D3;
+  opacity: 0.95;
+  box-shadow: 0 0 0 1px #93C0D3;
+}
+
+/* Button container spacing */
+#button-container {
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+
+/* Color Circle as Moon/Sun in Ukiyo-e style */
+.color-circle-container {
+  min-height: 180px;
+  width: 100%;
+  overflow: visible;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.color-circle-container svg circle {
+  filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.8));
+}
+
+/* Color Card styles */
+#color-display {
+  position: sticky;
+  top: 0;
+  background-color: transparent;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  align-items: center;
+}
+
+#color-card {
+  background-color: transparent;
+  border: none;
+  box-shadow: none;
+  margin: 0 auto;
+}
+
+h3 {
+  margin: 0 0 10px;
+}
+
+.color-title {
+  font-family: var(--font-japanese);
+  font-weight: var(--font-weight-bold);
+}
+
+.color-description {
+  text-align: center;
+  font-size: 0.95rem;
+  background-color: var(--warm-white);
+  padding: 12px;
+  border-radius: 6px;
+  max-width: 80%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: relative;
+  border: none;
+}
+
+/* Painted border for color description */
+.color-description::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: transparent;
+  border: none;
+  border-radius: 9px;
+  box-shadow: 0 0 0 1.5px #D9A74A;
+  opacity: 0.85;
+  z-index: -1;
+  filter: blur(1px);
+  pointer-events: none;
+}
+
+
+/* Loading indicator */
+.loading-indicator {
+  background-color: var(--warm-white);
+  z-index: 9999;
+  padding: 20px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border: 1px solid var(--soft-border);
+  border-radius: 6px;
+}
+
+/* Reflection styles */
+.reflection-container {
+  margin-bottom: 30px;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.reflection-card {
+  border-radius: 6px;
+  background-color: var(--warm-white);
+  box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+  padding: 15px;
+  border: none;
+  position: relative;
+  opacity: 0.85;
+
+}
+
+/* Painted border effect */
+.reflection-card::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  right: -1px;
+  bottom: -1px;
+  background: transparent;
+  border: none;
+  border-radius: 9px;
+  box-shadow: 0 0 0 1px #6b4423;
+  opacity: 0.7;
+  z-index: -1;
+  filter: blur(1px);
+  pointer-events: none;
+}
+
+.reflection-label {
+  font-weight: var(--font-weight-bold);
+  font-size: 0.9rem;
+  color: #444;
+  margin-bottom: 8px;
+  font-family: var(--font-japanese);
+}
+
+.reflection-text {
+  text-align: left;
+  line-height: 1.6;
+}
+
+/* User reply styles */
+.user-reply-container {
+  margin-bottom: 30px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.user-reply-button {
+  padding: 8px 15px;
+  background-color: rgba(117, 179, 240, 0.8);
+  color: white;
+  border-radius: 6px;
+  text-align: left;
+  cursor: default;
+  opacity: 0.85;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* Layout styles */
+.main-layout {
+  display: flex;
+  flex-wrap: wrap;
+  min-height: calc(100vh - 50px);
+}
+
+.content-column {
+  flex: 2;
+  padding-right: 20px;
+}
+
+.sidebar-column {
+  flex: 1;
+  background-color: transparent;
+}
+
+.chat-container {
+  /* border-radius: 6px;
+  background-color: var(--warm-white);
+  box-shadow: 0 1px 5px rgba(0,0,0,0.1); */
+  /* border: 1px solid var(--soft-border); */
+  border: none;
+  box-shadow: none;
+  padding: 20px;
+  padding-top: 10px;
+  height: 100%;
+  overflow-y: auto;
+  position: relative;
+}
+
+/* Painted border for the main chat container */
+.chat-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 0 0 2px #5E4365;
+  opacity: 0.8;
+  z-index: -1;
+  filter: blur(1.2px);
+  pointer-events: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 960px) {
+  .main-layout {
+    display: block;
+    min-height: auto;
+  }
+  
+  .content-column {
+    padding-right: 0;
+    margin-bottom: 20px;
+  }
+} 

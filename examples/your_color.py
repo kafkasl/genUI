@@ -93,12 +93,16 @@ def UserReply(msg):
 
 def generate_buttons(options: list[str]):
     return Div(
-        *[Button(option, name=option, hx_target="#button-container", hx_indicator=".htmx-indicator",
+        *[Div(
+            Button(option, name=option, hx_target="#button-container", hx_indicator=".htmx-indicator",
                  hx_swap="outerHTML",
-                 hx_post="/send", cls="uk-button uk-button-default uk-margin-small-right") 
-          for option in options],
+                 hx_post="/send", cls="uk-button uk-button-default",
+                 attrs={"onmouseover": "this.classList.add('uk-button-primary')", 
+                        "onmouseout": "this.classList.remove('uk-button-primary')"}),
+            cls="uk-margin-small-bottom uk-margin-small-right uk-display-inline-block"
+          ) for option in options],
         id="button-container",
-        cls="uk-margin-medium-bottom"
+        cls="uk-margin-medium-bottom uk-flex uk-flex-wrap"
     )
 
 def Reflection(text: str):
@@ -135,7 +139,10 @@ def index():
 
     page = Div(cls="uk-container")(
         # Loading indicator at the top level
-        Card("Reflecting...", cls="htmx-indicator uk-position-fixed uk-overlay uk-overlay-default uk-position-center", style="background-color: white; z-index: 9999; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.2);"),
+        Card("Reflecting...", cls="htmx-indicator uk-position-fixed uk-overlay uk-overlay-default uk-position-center", 
+             style="background-color: white; z-index: 9999; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.2); pointer-events: none;", 
+             attrs={"_": "on htmx:beforeRequest add .pointer-events-auto to me, on htmx:afterRequest remove .pointer-events-auto from me",
+                    "style:pointer-events": "none"}),
         
         Div(cls="uk-grid uk-grid-medium uk-margin-top", attrs={"uk-grid": ""})(
             Div(cls="uk-width-2-3@m")(
@@ -148,7 +155,15 @@ def index():
             )
         )
     )
-    return Titled('Mindful Awareness Practice', page, cls=ContainerT.lg)
+    
+    # Add a tiny bit of CSS to handle the pointer events dynamically
+    css = """
+    <style>
+    .pointer-events-auto { pointer-events: auto !important; }
+    </style>
+    """
+    
+    return Titled('Mindful Awareness Practice', Div(NotStr(css), page), cls=ContainerT.lg)
 
 @app.post
 async def send(request):
