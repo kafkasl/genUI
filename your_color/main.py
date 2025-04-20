@@ -92,9 +92,9 @@ def UserReply(msg): return Div(Div(msg, cls="user-reply-button"), cls="user-repl
 
 def generate_buttons(options: list[str]):
     return Div(
-        *[Button(option, name=option, hx_target="#button-container", hx_indicator=".htmx-indicator",
-                 hx_swap="outerHTML",
-                 hx_post="/send", cls="awareness-option") for option in options],
+        *[Button(option, name=option, hx_target="#button-container",hx_indicator=".htmx-indicator",
+                 hx_swap="outerHTML show:window:bottom", hx_post="/send", cls="awareness-option")
+            for option in options],
         id="button-container"
     )
 
@@ -137,7 +137,8 @@ def generate_finish_response(color: str, reflection: str):
         Button("Finish and view your awareness portrait", 
               hx_post="/finish-view", 
               hx_target="#chatlist",
-              hx_swap="innerHTML scroll:window:top",
+              hx_swap="innerHTML",
+              hx_confirm="Are you sure you wish to finish and hide the chat?",
               cls="awareness-option"),
         Button("Continue reflection", 
               name="continue_reflection", 
@@ -161,7 +162,7 @@ def index():
         
         Div(cls="main-layout")(
             Div(cls="content-column")(
-                Card(id="chatlist", cls="chat-container", attrs={"hx-swap-oob": "beforeend"})( 
+                Card(id="chatlist", cls="chat-container")( 
                     Reflection(initial_instructions, title=H1("Mindful Awareness Practice", cls="ukiyo-title")),
                     buttons)
             ),
@@ -182,30 +183,21 @@ async def send(request):
 
     r = cli.structured(messages, tools=[generate_response, generate_finish_response])
     response_text, color, color_component, new_buttons = r[0]
-    messages.append(response_text)
-    
-    # Create a div for the user response and reflection that will be appended to the chat container
-    chat_content = Div(
-        UserReply(user_choice),
-        Reflection(response_text),
-        new_buttons,
-        id="new-content",
-        attrs={"hx-swap-oob": "beforeend:#chatlist scroll:bottom"}
-    )
+    messages.extend([color, response_text])
     
     return (
-        chat_content,
-        color_component # display the new color & mood using oob replacement
-    )
+        UserReply(user_choice),
+        Reflection(response_text),
+        color_component,
+        new_buttons)
+    
+
 
 @app.post("/finish-view")
 async def finish_view():
-    """Return a minimalist view that replaces the chatlist."""
+    """Return a title that replaces the chatlist."""
     return Div(
-        H1("Your Mindful Awareness Portrait", cls="ukiyo-title"),
-        P("The moon reflects your present moment awareness. Take a moment to observe and absorb this reflection."),
-        Button("Start New Journey", hx_get="/", hx_target="body", cls="awareness-option"),
-        id="chatlist"  # Same ID as chat list for replacement
+        H1("Your Mindful Awareness Portrait", cls="ukiyo-title")
     )
 
 serve(reload=True)

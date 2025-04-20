@@ -14,7 +14,6 @@
 body {
   background-image: url('hiroshige.webp');
   background-size: cover;
-  background-position: center;
   background-attachment: fixed;
   background-repeat: no-repeat;
   margin: 0;
@@ -28,6 +27,10 @@ body {
 html {
   height: 100%;
   
+}
+
+p {
+  color: #333;
 }
 
 /* Ukiyo-e style title */
@@ -177,6 +180,7 @@ h3 {
 
 /* Loading indicator */
 .loading-indicator {
+  color: #333;
   background-color: var(--warm-white);
   z-index: 9999;
   padding: 20px;
