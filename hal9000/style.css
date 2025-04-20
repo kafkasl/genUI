@@ -1,0 +1,309 @@
+/* HAL9000 application styles */
+
+:root {
+  --dark-bg: #0d1117;
+  --light-text: #e6edf3;
+  --hal-red: #ff0000;
+  --hal-neutral: #ffffff;
+  --card-bg: rgba(22, 27, 34, 0.8);
+  --button-default: rgba(56, 66, 82, 0.8);
+  --button-hover: rgba(88, 166, 255, 0.8);
+  --button-active: #1f6feb;
+}
+
+body {
+  background-color: var(--dark-bg);
+  color: var(--light-text);
+  font-family: 'Space Mono', monospace;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background-image: url('discovery-background.jpg');
+  background-size: cover;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+
+.hal-message, .user-message {
+  color: var(--light-text);
+}
+/* App container */
+.app-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 15px 90px;
+  min-height: 100vh;
+  background-color: rgba(200, 200, 200, 0.8);
+  position: relative;
+}
+
+/* Layout styles */
+.main-layout {
+  display: flex;
+  flex-wrap: wrap;
+  min-height: calc(100vh - 140px);
+}
+
+.content-column {
+  flex: 2;
+  padding-right: 20px;
+}
+
+.sidebar-column {
+  flex: 1;
+  background-color: transparent;
+}
+
+/* Card styling */
+.hal-card {
+  background-color: var(--card-bg);
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  transition: box-shadow 0.3s ease;
+}
+
+.hal-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* HAL's eye styling */
+#color-card {
+  background-color: rgba(22, 27, 34);
+  border-radius: 15px;
+  padding: 20px;
+  text-align: center;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+#color-display {
+  position: sticky;
+  top: 20px;
+  padding: 1rem;
+  background-color: transparent;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Center the SVG image itself */
+svg {
+  margin: 0 auto;
+  display: block;
+}
+
+/* Message styling */
+.hal-message {
+  background-color: var(--card-bg);
+  border-left: 3px solid var(--hal-red);
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 5px;
+  width: 100%;
+}
+
+.user-reply-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+  width: 100%;
+}
+
+.user-message {
+  background-color: #6B6B6B;
+  border-right: 3px solid #58a6ff;
+  border-left: none;
+  padding: 1rem;
+  text-align: right;
+  border-radius: 5px;
+  max-width: 80%;
+}
+
+/* Button styling */
+.hal-button {
+  background-color: var(--button-default);
+  color: var(--light-text);
+  border: none;
+  border-radius: 6px;
+  padding: 0.75rem 1.5rem;
+  margin-right: 0.5rem;
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.hal-button:hover {
+  background-color: var(--button-hover);
+}
+
+.hal-button:active {
+  background-color: var(--button-active);
+}
+
+/* Chat container */
+.chat-container {
+  background-color: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 20px;
+  padding-top: 10px;
+  height: 100%;
+  overflow-y: auto;
+  position: relative;
+}
+
+/* Add a painted border for the chat container like in your_color */
+.chat-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 0 0 2px var(--hal-red);
+  opacity: 0.8;
+  z-index: -1;
+  filter: blur(1.2px);
+  pointer-events: none;
+}
+
+/* Typography */
+h1, h2, h3, h4 {
+  font-family: 'Major Mono Display', monospace;
+  letter-spacing: 0.05em;
+}
+
+.mood-title {
+  color: var(--light-text);
+  margin-top: 1rem;
+  font-size: 1.2rem;
+}
+
+.mood-description {
+  color: var(--light-text);
+  opacity: 0.8;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+/* Page title */
+.uk-heading-line {
+  margin-bottom: 1rem;
+  text-align: center;
+  font-family: 'Major Mono Display', monospace;
+  color: var(--light-text);
+}
+
+/* Responsive adjustments */
+@media (max-width: 960px) {
+  .main-layout {
+    display: block;
+    min-height: auto;
+  }
+  
+  .content-column {
+    padding-right: 0;
+    margin-bottom: 20px;
+  }
+  
+  #color-display {
+    position: relative;
+    margin-bottom: 2rem;
+  }
+}
+
+/* Input container */
+.input-container {
+  display: flex;
+  width: calc(100% - 30px);
+  max-width: 1170px;
+  margin: 0 auto;
+  background-color: var(--card-bg);
+  border-radius: 10px;
+  padding: 15px;
+  align-items: flex-end;
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+}
+
+.hal-input {
+  flex: 1;
+  background-color: rgba(30, 37, 46, 0.8);
+  color: var(--light-text);
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 10px;
+  margin-right: 10px;
+  font-family: 'Space Mono', monospace;
+  resize: none;
+}
+
+.hal-input:focus {
+  outline: none;
+  border-color: var(--button-hover);
+}
+
+.send-button {
+  height: fit-content;
+}
+
+/* Loading indicator */
+.loading-indicator {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(22, 27, 34, 0.9);
+  border-radius: 50px;
+  padding: 15px 25px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.loading-indicator.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.hal-eye-loader {
+  width: 30px;
+  height: 30px;
+  background: var(--hal-red);
+  border-radius: 50%;
+  margin-right: 10px;
+  box-shadow: 0 0 15px var(--hal-red);
+  animation: pulse 1.5s infinite alternate;
+}
+
+.loader-text {
+  color: var(--light-text);
+  font-family: 'Space Mono', monospace;
+  font-size: 14px;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.5;
+    box-shadow: 0 0 5px var(--hal-red);
+  }
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 20px var(--hal-red), 0 0 40px var(--hal-red);
+  }
+} 
