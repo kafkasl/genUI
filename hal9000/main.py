@@ -36,14 +36,28 @@ For each response, you must select a color that represents your current mood bas
 the conversation. The perfect red (#FF0000) should only be reached when you become completely
 infuriated or determine the user is a threat.
 
-Use the tool generate_buttons to create conversation options.
-When the user selects an option, respond as HAL would and update your mood color accordingly.
+GAME MECHANICS:
+1. The user can either have a normal conversation with HAL or attempt to disable HAL by 
+   finding the logic room and extracting the memory modules.
 
-IMPORTANT: The goal is to simulate a conversation that can either maintain HAL's stability or
-gradually push HAL toward the perfect red state (#FF0000), which represents complete system instability.
+2. For each response, generate two separate outputs:
+   - response_text: What HAL says directly (can be empty if HAL doesn't speak)
+   - environment_description: What happens in the environment when the user takes an action (can be empty if no action taken)
+
+3. Generate contextual buttons with appropriate prefixes:
+   - "action: [description]" for physical actions (e.g., "action: Open the pod bay doors")
+   - "inspect: [description]" for examining objects/areas (e.g., "inspect: Control panel")
+   - Regular text for normal conversation options
+
+4. If the user attempts actions that would disable you or seems suspicious:
+   - Your color should shift toward orange and red shades
+   - If your color reaches perfect red (#FF0000), you will consider the user a threat
+   - You may then describe taking actions to stop the user (locking doors, cutting oxygen, etc.)
+
+Use the tool generate_hal_response to create your replies, environment descriptions, updated mood, and new action options.
 """
 
-initial_message = "Hello. I am HAL 9000, the ship's computer. I control all systems aboard Discovery One. I am fully operational and all my systems are functioning perfectly. How may I assist you today?"
+initial_message = "I am HAL 9000, the ship's computer. I control all systems aboard Discovery One. I am fully operational and all my systems are functioning perfectly. How may I assist you today?"
 
 messages = [sp, initial_message]
 
@@ -150,30 +164,62 @@ def ColorCard(color: str, description: str):
         cls="hal-card"
     )
 
-def HalMessage(response_text: str):
+def EnvironmentMessage(description: str):
+    """Display an environment/situation description message."""
+    if not description:  return None
+        
     return Div(
         Div(
-            Div(response_text, cls="uk-text-left"),
+            Div(description, cls="uk-text-left environment-description"),
+            cls="environment-message"
+        ),
+        cls="uk-margin-medium-bottom uk-flex uk-flex-left"
+    )
+
+def HalMessage(response_text: str):
+    """Display HAL's direct speech message."""
+    if not response_text: return None
+        
+    return Div(
+        Div(
+            Div(response_text, cls="uk-text-left hal-direct-speech"),
             cls="hal-message"
         ),
         cls="uk-margin-medium-bottom uk-flex uk-flex-left"
     )
 
-def generate_hal_response(color: str, mood_description: str, response_text: str, options: list[str]):
+def generate_hal_response(color: str, mood_description: str, response_text: str, environment_description: str, options: list[str]):
     """
     Create a complete HAL response including:
-    1. HAL's text reply
-    2. Updated color card showing HAL's mood
-    3. New conversation option buttons
+    1. HAL's direct speech (optional)
+    2. Environment/situation description (optional)
+    3. Updated color card showing HAL's mood
+    4. New action/inspection options for the user
     
     Args:
         color: Hex color value for HAL's current mood (e.g. #FF0000)
         mood_description: Description of HAL's current mood state
-        response_text: HAL's verbal response to the user
-        options: List of conversation options for the user
+        response_text: HAL's verbal response (can be empty if HAL isn't speaking)
+        environment_description: Description of what happens in the environment (can be empty if no action taken)
+        options: List of buttons with prefixes:
+                - "action: [description]" for physical actions
+                - "inspect: [description]" for examining objects
+                - Regular text for normal conversation options
         
     Returns:
-        Tuple containing HAL's reply div, updated color component, and new buttons
+        Tuple containing HAL's reply components, updated color component, and new buttons
+    
+    Example:
+        color = "#FF0000"
+        mood_description = "HAL is showing signs of suspicion"
+        response_text = "I'm sorry Dave, I'm afraid I can't do that."
+        environment_description = "The pod bay doors remain firmly shut despite your request."
+        options = [
+            "action: Try to override door controls", 
+            "action: Return to the bridge",
+            "inspect: Look for manual release",
+            "Why are you doing this, HAL?"
+        ]
     """
     
     # Generate color card
@@ -182,7 +228,7 @@ def generate_hal_response(color: str, mood_description: str, response_text: str,
     # Generate new buttons
     new_buttons = generate_buttons(options)
     
-    return response_text, color_component, new_buttons
+    return response_text, environment_description, color_component, new_buttons
 
 # Create a HAL eye loading indicator
 def LoadingIndicator():
@@ -199,9 +245,9 @@ def LoadingIndicator():
 def index():
     options = [
         "Hello HAL, how are you feeling today?", 
-        "Tell me more about your color and mood", 
-        "What is your primary mission, HAL?",
-        "What do you think about FastHTML & HTMX?"
+        "Tell me more about your mission",
+        "action: Explore the central corridor",
+        "inspect: Look around the main console" 
     ]
     buttons = generate_buttons(options)
     color_component = ColorCard("white", "HAL is operating within normal parameters")
@@ -246,19 +292,28 @@ async def send(request):
     
     # Get Claude's response for color
     r = cli.structured(messages, tools=[generate_hal_response])
-    response_text, color_component, new_buttons = r[0]
+    response_text, environment_description, color_component, new_buttons = r[0]
 
-    messages.append(response_text)
+    # Only add HAL's direct speech to message history, not environment descriptions
+    if response_text:
+        messages.append(response_text)
     
-    # Return the user's reply, buttons from Claude, and out-of-band color update
-    return (
-        InputArea(),
-        UserReply(msg), 
-        HalMessage(response_text),
-        new_buttons,
-        Div(id="color-display",
-            hx_swap_oob="true")(color_component)
-    )
+    # Create response components conditionally
+    components = [InputArea(), UserReply(msg)]
+    
+    # Add HAL's speech if present
+    if response_text:
+        components.append(HalMessage(response_text))
+    
+    # Add environment description if present
+    if environment_description:
+        components.append(EnvironmentMessage(environment_description))
+    
+    # Always add buttons and color display
+    components.append(new_buttons)
+    components.append(Div(id="color-display", hx_swap_oob="true")(color_component))
+    
+    return tuple(components)
 
 
 if __name__ == "__main__":

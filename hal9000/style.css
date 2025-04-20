@@ -106,6 +106,32 @@ svg {
   width: 100%;
 }
 
+.environment-message {
+  background-color: var(--card-bg);
+  border-left: 3px solid #58a6ff;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 5px;
+  width: 100%;
+}
+
+/* HAL direct speech vs narrative styling */
+.hal-direct-speech {
+  font-family: 'Space Mono', monospace;
+  font-weight: bold;
+  color: #ff3333;
+}
+
+.environment-description {
+  font-style: italic;
+  color: #a2c8ff;
+}
+
+.narrative-description {
+  font-style: italic;
+  color: #cccccc;
+}
+
 .user-reply-container {
   display: flex;
   justify-content: flex-end;
