@@ -101,7 +101,7 @@ svg {
   background-color: var(--card-bg);
   border-left: 3px solid var(--hal-red);
   padding: 1rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   border-radius: 5px;
   width: 100%;
 }
@@ -110,7 +110,7 @@ svg {
   background-color: var(--card-bg);
   border-left: 3px solid #58a6ff;
   padding: 1rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   border-radius: 5px;
   width: 100%;
 }
@@ -118,8 +118,7 @@ svg {
 /* HAL direct speech vs narrative styling */
 .hal-direct-speech {
   font-family: 'Space Mono', monospace;
-  font-weight: bold;
-  color: #ff3333;
+  color: var(--light-text);
 }
 
 .environment-description {
@@ -135,7 +134,7 @@ svg {
 .user-reply-container {
   display: flex;
   justify-content: flex-end;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   width: 100%;
 }
 
@@ -332,4 +331,85 @@ h1, h2, h3, h4 {
     opacity: 1;
     box-shadow: 0 0 20px var(--hal-red), 0 0 40px var(--hal-red);
   }
+}
+
+/* Show-instructions button */
+.show-instructions {
+  margin-bottom: 15px;
+  display: none;
+}
+
+/* Instructions panel */
+.instructions-panel {
+  background-color: var(--card-bg);
+  border: 2px solid #58a6ff;
+  border-radius: 10px;
+  padding: 15px 20px;
+  margin-bottom: 20px;
+  color: var(--light-text);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.instructions-panel h3 {
+  margin-top: 0;
+  color: #58a6ff;
+}
+
+.instructions-panel ul {
+  margin-left: 20px;
+}
+
+.instructions-panel p {
+  margin-bottom: 10px;
+}
+
+/* Modal popup */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: var(--card-bg);
+  border: 2px solid #58a6ff;
+  border-radius: 10px;
+  padding: 20px;
+  max-width: 500px;
+  width: 90%;
+  color: var(--light-text);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-content h3 {
+  margin-top: 0;
+  color: #58a6ff;
+  text-align: center;
+}
+
+.modal-content ul {
+  margin-left: 20px;
+  margin-bottom: 20px;
+}
+
+.modal-content p {
+  margin-bottom: 15px;
+}
+
+.modal-footer {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.instructions-button {
+  margin-bottom: 15px;
 } 

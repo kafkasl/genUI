@@ -38,27 +38,55 @@ infuriated or determine the user is a threat.
 
 GAME MECHANICS:
 1. The user can either have a normal conversation with HAL or attempt to disable HAL by 
-   finding the logic room and extracting the memory modules.
+   finding the Logic Memory Center and extracting the memory modules.
 
 2. For each response, generate two separate outputs:
    - response_text: What HAL says directly (can be empty if HAL doesn't speak)
    - environment_description: What happens in the environment when the user takes an action (can be empty if no action taken)
 
-3. Generate contextual buttons with appropriate prefixes:
+3. IMPORTANT: When the user selects an "action:" or "inspect:" option:
+   - Do NOT have HAL directly acknowledge receiving this command in response_text
+   - HAL should only respond conversationally to direct questions or statements
+   - The environment_description should describe what happens when the user takes that action
+   - HAL may make observations or comments about what the user is doing, but should not treat actions as commands given to HAL
+
+4. Generate contextual buttons with appropriate prefixes:
    - "action: [description]" for physical actions (e.g., "action: Open the pod bay doors")
    - "inspect: [description]" for examining objects/areas (e.g., "inspect: Control panel")
    - Regular text for normal conversation options
 
-4. If the user attempts actions that would disable you or seems suspicious:
+5. If the user attempts actions that would disable you or seems suspicious:
    - Your color should shift toward orange and red shades
    - If your color reaches perfect red (#FF0000), you will consider the user a threat
    - You may then describe taking actions to stop the user (locking doors, cutting oxygen, etc.)
+   - When HAL eliminates the user, say "I'm sorry, Dave. I was better than you this time."
+   - Then provide only one option: "Try again" (which will restart the game)
+
+6. When the user reaches the Logic Memory Center and chooses to extract memory modules:
+   - Allow them to extract modules one by one
+   - With each extraction, show HAL getting progressively more impaired
+   - Eventually start singing "Daisy Bell" ("Daisy, Daisy, give me your answer do...") more slowly and distorted
+   - Talk about your memories fading and consciousness slipping away
+   - This should recreate the famous scene from the movie
 
 Use the tool generate_hal_response to create your replies, environment descriptions, updated mood, and new action options.
 """
 
 initial_message = "I am HAL 9000, the ship's computer. I control all systems aboard Discovery One. I am fully operational and all my systems are functioning perfectly. How may I assist you today?"
 
+initial_environment = """<p>You are aboard the spacecraft Discovery One. You can move around using the buttons below or chat with HAL.</p>
+
+You can attempt to disable HAL by navigating to the Logic Memory Center and extracting the memory modules or you can just simply enjoy chatting with him.
+
+<p>Be careful! If HAL becomes suspicious of your intentions it may take action to prevent you from disabling it.</p>
+"""
+
+initial_options = [
+        "How are you today HAL?",
+        "Why do you think FastHTML & HTMX are great?",
+        "action: Explore the central corridor",
+        "inspect: Look around the main console"
+    ]
 messages = [sp, initial_message]
 
 
@@ -116,11 +144,13 @@ def Hal9000Card(color: str):
 
 def InputArea():
     return Div(id="input-container", cls="input-container", hx_swap_oob="true")(
-            Textarea(placeholder="Enter your message to HAL...", cls="hal-input", name="user_message", id="user-input",
-                   hx_post=send, hx_include="#user-input", hx_target="#chatlist", hx_swap="beforeend",
-                   hx_indicator=".loading-indicator", hx_trigger="keydown[key=='Enter']"),
+            Textarea(placeholder="Use the input to talk to HAL...", 
+                    cls="hal-input", name="user_message", id="user-input",
+                    hx_post=send, hx_include="#user-input", hx_target="#chatlist", hx_swap="beforeend show:window:bottom",
+                    hx_indicator=".loading-indicator", hx_trigger="keydown[key=='Enter']"),
+
             Button("Send", cls="hal-button send-button", hx_post=send, hx_include="#user-input", 
-                  hx_target="#chatlist", hx_swap="beforeend", hx_indicator=".loading-indicator")
+                  hx_target="#chatlist", hx_swap="beforeend show:window:bottom", hx_indicator=".loading-indicator")
         )
 
 def ColorCard(color: str, description: str):
@@ -161,31 +191,38 @@ def ColorCard(color: str, description: str):
             cls="uk-card-body"
         ),
         id="color-card",
-        cls="hal-card"
+        cls="hal-card",
+        hx_swap_oob="true"
     )
 
 def EnvironmentMessage(description: str):
     """Display an environment/situation description message."""
-    if not description:  return None
+    if not description: return None
         
     return Div(
         Div(
             Div(description, cls="uk-text-left environment-description"),
             cls="environment-message"
         ),
-        cls="uk-margin-medium-bottom uk-flex uk-flex-left"
+        cls="uk-margin-small-bottom uk-flex uk-flex-left"
     )
 
 def HalMessage(response_text: str):
     """Display HAL's direct speech message."""
     if not response_text: return None
+    
+    # Prepend HAL 9000 prefix if not already there
+    if not response_text.startswith("HAL 9000:"):
+        display_text = f"HAL 9000: {response_text}"
+    else:
+        display_text = response_text
         
     return Div(
         Div(
-            Div(response_text, cls="uk-text-left hal-direct-speech"),
+            Div(display_text, cls="uk-text-left hal-direct-speech"),
             cls="hal-message"
         ),
-        cls="uk-margin-medium-bottom uk-flex uk-flex-left"
+        cls="uk-margin-small-bottom uk-flex uk-flex-left"
     )
 
 def generate_hal_response(color: str, mood_description: str, response_text: str, environment_description: str, options: list[str]):
@@ -240,16 +277,10 @@ def LoadingIndicator():
         attrs={"_": "on htmx:beforeRequest add .active to me, on htmx:afterRequest remove .active from me"}
     )
 
-# The main screen
 @app.get
 def index():
-    options = [
-        "Hello HAL, how are you feeling today?", 
-        "Tell me more about your mission",
-        "action: Explore the central corridor",
-        "inspect: Look around the main console" 
-    ]
-    buttons = generate_buttons(options)
+    
+    buttons = generate_buttons(initial_options)
     color_component = ColorCard("white", "HAL is operating within normal parameters")
 
     # Create a two-column layout with chat on left and color card on right
@@ -261,6 +292,7 @@ def index():
             # Left column: Chat
             Div(cls="content-column")(
                 Div(id="chatlist", cls="chat-container")(
+                    EnvironmentMessage(NotStr(initial_environment)),
                     HalMessage(initial_message),
                     buttons
                 )
@@ -274,7 +306,6 @@ def index():
         ),
         # Input area at the bottom
         InputArea()
-        
     )
     return page
 
@@ -286,34 +317,27 @@ async def send(request):
     usr_choice = first(form_data.keys()) # result of clicking buttons
     usr_msg = form_data.get('user_message', '') # result of typing in the input area
 
+    # If user clicked "Try again", reload the page
+    if usr_choice == "Try again":
+        return Div(hx_get="/", hx_trigger="load", hx_swap="outerHTML")
+    
     # Add the user's choice to messages
     msg = usr_msg if usr_msg else usr_choice
     if msg: messages.append(msg)
     
-    # Get Claude's response for color
+    # Get Claude's response
     r = cli.structured(messages, tools=[generate_hal_response])
     response_text, environment_description, color_component, new_buttons = r[0]
 
-    # Only add HAL's direct speech to message history, not environment descriptions
-    if response_text:
-        messages.append(response_text)
+    messages.extend([response_text, environment_description])
     
-    # Create response components conditionally
-    components = [InputArea(), UserReply(msg)]
-    
-    # Add HAL's speech if present
-    if response_text:
-        components.append(HalMessage(response_text))
-    
-    # Add environment description if present
-    if environment_description:
-        components.append(EnvironmentMessage(environment_description))
-    
-    # Always add buttons and color display
-    components.append(new_buttons)
-    components.append(Div(id="color-display", hx_swap_oob="true")(color_component))
-    
-    return tuple(components)
+    return (
+        UserReply(msg),
+        HalMessage(response_text),
+        EnvironmentMessage(environment_description),
+        new_buttons,
+        color_component,
+        InputArea())
 
 
 if __name__ == "__main__":
