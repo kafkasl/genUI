@@ -1,3 +1,7 @@
+---
+title: "AI is the new UI: Generative UI with FastHTML"
+---
+
 # AI is the new UI: Generative UI with FastHTML
 
 Today's AI interfaces are predominantly text-based and feel clunky compared to traditional apps. The next generation of AI applications will need to perform much better to gain mainstream adoption. In this article, we'll explore how to transition from basic text-based chat into rich interactive experiences with buttons and visual elements - all in less than 150 lines of code using FastHTML and Answer.ai libraries. We'll see how to eliminate the "contract coupling" between frontend and backend thanks to [HTMX](https://htmx.org), enabling LLMs to generate truly dynamic interfaces that users can interact with directly.
@@ -333,19 +337,21 @@ The HAL 9000 demo represents what we believe is the future of AI interfaces (pun
 
 You can explore the complete HAL 9000 demo code [here](https://github.com/kafkasl/genUI/tree/main/hal9000).
 
-## A Note on Current Limitations
+## Conclusion
 
-It's important to acknowledge that in the current demos, I'm using the LLM for tool calling rather than having it generate the FastHTML components directly. The LLM decides which tools to call and with what parameters, but the actual UI structure is predefined in the Python functions.
+I hope you enjoyed the exploration the evolution of AI interfaces from basic text chats to rich interactive experiences. Using less than 150 lines of code with FastHTML and Answer.ai libraries, we've demonstrated how to build GenUI applications that combine the power of LLMs with the responsiveness of traditional UIs.
 
-A more advanced approach would be to have the LLM generate the FastHTML components themselves as Python code. This would give the model even greater flexibility in creating novel UI patterns without predefined structures. We plan to explore this direction in a future post, as it represents the next evolution of Generative UI where the LLM has complete control over both content and presentation. 
+The key insight is that by eliminating contract coupling through a hypermedia approach, we can create truly adaptive interfaces where LLMs dynamically generate both content and interactive elements. Whether it's weather cards, mindfulness experiences, or navigating a spaceship with HAL 9000, these demos showcase how GenUI can transform AI interactions from clunky text exchanges into intuitive, visually engaging experiences.
 
-I believe that models are getting good enough to do this with clear prompts explaining how FastHTML & HTMX work, how the single-endpoint approach can be used, and providing the language model with examples of these genUI components, such as the buttons from our demos and these kinds of interactions.
+Give these demos a try! Let me know if you encounter any errors - you can reach out to [me on X](https//x.com/pol_avec) or through [Fewsats](https://x.com/Fewsats). 
 
-The only downside is that these libraries are less popular than other alternatives and I've seen the LLMs struggle to get right basic HTMX features like `hx-confirm` or `scroll` behaviors. At this point, it really pays off to read [Hypermedia Systems](https://hypermedia.systems/) if you are considering going down this road.
+If you're building GenUI for MCP or tools use, we would love to hear from you and collaborate. (SPECIALLY if you're working on a mobile MCP client). 
 
-For now, our current approach strikes a practical balance between flexibility and reliability while demonstrating the core concepts of interactive GenUI.
+If you've enjoyed the reading consider giving us a star at the [L402 repo](https://github.com/l402-protocol/l402) which is the company paying for the coffee I drink while writing this.
 
-## Bonus Track: Answer.AI
+What a time to be alive!
+
+## Bonus Track: Answer.ai is all you need
 
 After finishing both demos I realized that the only imports I used are:
 
@@ -367,3 +373,16 @@ As a cherry on top, Answer.ai is now offering a deployment service [Plash](https
 - [HAL 9000 Demo](https://fasthtml-app-6e583cfc.pla.sh/)
 
 The goal of Answer.AI has always been to empower individual developers to create the AI applications of tomorrow, with a relentless focus on simplicity. These demos are the perfect embodiment of that vision - where many elements come together seamlessly without unnecessary complexity. A single developer (me in this case!) can create these beautiful, interactive experiences in just a weekend, with all the libraries from Answer.AI working in perfect synergy. That's the power of well-designed tools that prioritize developer experience without sacrificing capability. 
+
+## A Note on Current Limitations
+
+It's important to acknowledge that in the current demos, I'm using the LLM for tool calling rather than having it generate the FastHTML components directly. The LLM decides which tools to call and with what parameters, but the actual UI structure is predefined in the Python functions.
+
+A more advanced approach would be to have the LLM generate the FastHTML components themselves as Python code. This would give the model even greater flexibility in creating novel UI patterns without predefined structures. We plan to explore this direction in a future post, as it represents the next evolution of Generative UI where the LLM has complete control over both content and presentation. 
+
+I believe that models are getting good enough to do this with clear prompts explaining how FastHTML & HTMX work, how the single-endpoint approach can be used, and providing the language model with examples of these genUI components, such as the buttons from our demos and these kinds of interactions.
+
+The only downside is that these libraries are less popular than other alternatives and I've seen the LLMs struggle to get right basic HTMX features like `hx-confirm` or `scroll` behaviors. At this point, it really pays off to read [Hypermedia Systems](https://hypermedia.systems/) if you are considering going down this road.
+
+For now, our current approach strikes a practical balance between flexibility and reliability while demonstrating the core concepts of interactive GenUI.
+

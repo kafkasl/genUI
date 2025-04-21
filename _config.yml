@@ -1,0 +1,13 @@
+title: ''
+description: Generative UI with FastHTML
+theme: jekyll-theme-primer
+markdown: GFM
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+defaults:
+  -
+    scope:
+      path: ""
+    values:
+      layout: "default" 
