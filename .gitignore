@@ -10,3 +10,4 @@ user-scripts
 venv
 plash.env
 .plash
+.sesskey

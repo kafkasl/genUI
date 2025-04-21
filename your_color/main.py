@@ -141,7 +141,7 @@ def generate_finish_response(color: str, reflection: str):
               hx_confirm="Are you sure you wish to finish and hide the chat?",
               cls="awareness-option"),
         Button("Continue reflection", 
-              name="continue_reflection", 
+              name="Continue Reflection", 
               hx_post="/send",
               hx_target="#button-container",
               cls="awareness-option"),
@@ -200,4 +200,5 @@ async def finish_view():
         H1("Your Mindful Awareness Portrait", cls="ukiyo-title")
     )
 
-serve(reload=True)
+if __name__ == "__main__":
+    serve(reload=True)

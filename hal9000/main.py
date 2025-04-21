@@ -1,9 +1,6 @@
 from fasthtml.common import *
 from monsterui.all import *
 from claudette import *
-from datetime import datetime
-
-import os
 
 # os.environ['ANTHROPIC_LOG'] = 'debug'
 
@@ -146,7 +143,7 @@ def InputArea():
     return Div(id="input-container", cls="input-container", hx_swap_oob="true")(
             Textarea(placeholder="Use the input to talk to HAL...", 
                     cls="hal-input", name="user_message", id="user-input",
-                    hx_post=send, hx_include="#user-input", hx_target="#chatlist", hx_swap="beforeend show:window:bottom",
+                    hx_post=send, hx_target="#chatlist", hx_swap="beforeend show:window:bottom",
                     hx_indicator=".loading-indicator", hx_trigger="keydown[key=='Enter']"),
 
             Button("Send", cls="hal-button send-button", hx_post=send, hx_include="#user-input", 
