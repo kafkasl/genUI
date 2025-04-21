@@ -90,7 +90,7 @@ messages = [sp, initial_message]
 def generate_buttons(options: list[str]):
     """Generate a list of buttons. """
     return Div(
-        *[Button(option, name=option, hx_target="#button-container", hx_swap="outerHTML  show:window:bottom", hx_post=send, 
+        *[Button(option, name=option, hx_target="#chatlist", hx_swap="beforeend show:window:bottom", hx_post=send, 
                 hx_indicator=".loading-indicator", cls="hal-button") 
           for option in options],
         id="button-container",
