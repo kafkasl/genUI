@@ -11,7 +11,8 @@ hdrs = Theme.blue.headers()
 # Create your app with the theme
 app, rt = fast_app(hdrs=hdrs)
 
-model = models[1]
+model = 'claude-3-5-haiku-20241022'
+
 
 # Define the weather component function with enhanced visuals
 def WeatherComponent(location:str, temperature:str, description:str):

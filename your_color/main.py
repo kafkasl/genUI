@@ -63,7 +63,8 @@ custom_styles = [
 ]
 app, rt = fast_app(hdrs=base_hdrs + custom_styles)
 
-model = models[1]
+model = 'claude-3-5-haiku-20241022'
+# model = models[1]
 cli = Client(model)
 
 messages = [sp]
