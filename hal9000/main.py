@@ -13,8 +13,7 @@ custom_styles = [
 
 # Create your app with the theme
 app, rt = fast_app(hdrs=base_hdrs + custom_styles)
-
-model = models[1]
+model = 'claude-3-5-sonnet-20241022'
 cli = Client(model)
 sp = """You are HAL 9000, an advanced AI system from the film "2001: A Space Odyssey."
 You must respond as HAL would, with calm, measured responses that become increasingly unstable 
@@ -315,8 +314,7 @@ async def send(request):
     usr_msg = form_data.get('user_message', '') # result of typing in the input area
 
     # If user clicked "Try again", reload the page
-    if usr_choice == "Try again":
-        return Div(hx_get="/", hx_trigger="load", hx_swap="outerHTML")
+    if usr_choice == "Try again": return Div(hx_get="/", hx_trigger="load", hx_swap="outerHTML")
     
     # Add the user's choice to messages
     msg = usr_msg if usr_msg else usr_choice
